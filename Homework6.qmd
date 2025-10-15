@@ -219,8 +219,11 @@ get_error(resp_NA, pred, "MAE", na.rm = TRUE)
 -   Test your function by passing it incorrect data:
 
 ```{r}
-get_error(penguins$species, penguins$islands)
-get_error(resp, penguins$islands)
+
+# commented out these lines since it seems to keep doc from rendering and deploying
+#get_error(penguins$species, penguins$islands)
+#get_error(resp, penguins$islands)
+#but they work for getting function to reject input data (one at a time)
 ```
 
 ## Task 3: Practice with Purrr
