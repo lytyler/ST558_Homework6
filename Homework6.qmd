@@ -1,0 +1,312 @@
+---
+title: "Homework 6"
+author: "Lanette Tyler"
+format: html
+editor: visual
+editor_options: 
+  chunk_output_type: console
+---
+
+## Task 1: Conceptual Questions
+
+1.  What is the purpose of the lapply() function? What is the equivalent purrr function?
+
+The lapply() function is a base R function that accepts a list and a function as inputs, and applies the function to the elements of the list. The output is also a list. The equivalent purrr function is map().
+
+2.  Suppose we have a list called my_list. Each element of the list is a numeric data frame (all columns are numeric). We want to use lapply() to run the code cor(numeric_matrix, method = "kendall") on each element of the list. Write code to do this below! (I’m really trying to ask you how you specify method = "kendall" when calling lapply().)
+
+To give additional arguments to the function entered in lapply(), add them on after the function specification:
+
+`lapply(my_list, cor, method = "kendall")`
+
+3.  What are two advantages of using purrr functions instead of the BaseR apply family?
+
+Purrr functions are the tidyverse alternatives to the apply family of functions in BaseR. The two main advantages of using purrr functions instead of apply family functions are more consistency and some helper functions. Additional advantages include shorthand for referring to elements of a data object and shorthand for anonymous functions.
+
+4.  What is a side-effect function?
+
+A side effect function is one that produces something, like printing or plotting, but does not return a value like a transformation function does. The invisible() function can be used so that a side-effect function does return an unchanged value in addition to producing the side effect.
+
+5.  Why can you name a variable sd in a function and not cause any issues with the sd function?
+
+R has environments. The sd function exists within the stats package environment. A variable named sd within a written function exists within the temporary environment for that written function, so the two do not affect each other.
+
+## Task 2: Writing R Functions
+
+1.  Write a basic function (call it getRMSE()) that takes in a vector of responses and a vector of predictions and outputs the RMSE.
+
+```{r}
+
+getRMSE <- function(response_vector, prediction_vector, ...) {
+  RMSE <- sqrt(mean((response_vector - prediction_vector)^2, ...))
+  RMSE
+}
+```
+
+2.  Run the following code to create some response values and predictions.
+
+```{r}
+
+set.seed(10)
+n <- 100
+x <- runif(n)
+resp <- 3 + 10 * x + rnorm(n)
+pred <- predict(lm(resp ~ x), data.frame(x))
+```
+
+Test your RMSE function using this data.
+
+```{r}
+
+getRMSE(resp, pred)
+getRMSE(resp, pred, na.rm = TRUE)
+```
+
+Repeat the test after manually replacing two of the response values with missing values (NA_real_)
+
+-   Replace two resp values with NA's
+
+```{r}
+set.seed(5)
+resp_NA <- resp
+resp_NA[runif(1, 1, 100)] <- NA_real_
+resp_NA[runif(1, 1, 100)] <- NA_real_
+resp_NA
+```
+
+-   test getRMSE function with data with NA's, with and without adding argument to remove NA's
+
+```{r}
+getRMSE(resp_NA, pred)
+getRMSE(resp_NA, pred, na.rm = TRUE)
+```
+
+3.  Write a function called getMAE() that follows the specifications of the getRMSE() function.
+
+```{r}
+
+getMAE <- function(response_vector, prediction_vector, ...) {
+  MAE <- mean(abs(response_vector - prediction_vector), ...)
+  MAE
+}
+```
+
+4.  Run the following code to create some response values and predictions.
+
+```{r}
+
+set.seed(10)
+n <- 100
+x <- runif(n)
+resp <- 3 + 10 * x + rnorm(n)
+pred <- predict(lm(resp ~ x), data.frame(x))
+```
+
+-   Test your MAE function using this data.
+
+```{r}
+
+getMAE(resp, pred)
+getMAE(resp, pred, na.rm = TRUE)
+```
+
+-   Repeat after replacing two of the response values with missing values (NA_real_).
+
+Replace two resp values with NA's:
+
+```{r}
+
+set.seed(7)
+resp_NA <- resp
+resp_NA[runif(1, 1, 100)] <- NA_real_
+resp_NA[runif(1, 1, 100)] <- NA_real_
+resp_NA
+```
+
+Test your MAE function with and without specifying the behavior to deal with missing values.
+
+```{r}
+getMAE(resp_NA, pred)
+getMAE(resp_NA, pred, na.rm = TRUE)
+```
+
+5.  Create wrapper function
+
+```{r}
+
+get_error <- function(response_vector, prediction_vector, function1, function2, ...) {
+  if (!is.atomic(response_vector) | !is.numeric(response_vector)) {
+    stop("Please enter a numeric atomic vector for the response vector.")
+  }
+  if (!is.atomic(prediction_vector) | !is.numeric(prediction_vector)) {
+    stop("Please enter a numeric atomic vector for the prediction vector.")
+  }
+  if (missing(function1) & missing(function2)) {
+    RMSEvalue <- getRMSE(response_vector, prediction_vector, ...)
+    MAEvalue <- getMAE(response_vector, prediction_vector, ...)
+    result_list <- list(RMSE = RMSEvalue, MAE = MAEvalue)
+    result_list
+  } else if (!missing(function1) & missing(function2)) {
+    if (function1 == "RMSE") {
+      RMSEvalue <- getRMSE(response_vector, prediction_vector, ...)
+      result_list <- list(RMSE = RMSEvalue)
+      result_list
+    } else if (function1 == "MAE") {
+      MAEvalue <- getMAE(response_vector, prediction_vector, ...)
+      result_list <- list(MAE = MAEvalue)
+      result_list
+    }
+  } else if (!missing(function1) & !missing(function2)) {
+    RMSEvalue <- getRMSE(response_vector, prediction_vector, ...)
+    MAEvalue <- getMAE(response_vector, prediction_vector, ...)
+    result_list <- list(RMSE = RMSEvalue, MAE = MAEvalue)
+    result_list
+  }
+}
+```
+
+6.  Run the following code to create some response values and predictions.
+
+```{r}
+
+set.seed(10)
+n <- 100
+x <- runif(n)
+resp <- 3 + 10 * x + rnorm(n)
+pred <- predict(lm(resp ~ x), data.frame(x))
+```
+
+-   Test your new function using this data. Call it once asking for each metric individually and once specifying both metrics
+
+```{r}
+get_error(resp, pred)
+get_error(resp, pred, "RMSE", "MAE")
+get_error(resp, pred, "MAE", "RMSE")
+get_error(resp, pred, "RMSE")
+get_error(resp, pred, "MAE")
+```
+
+-   Repeat with replacing two of the response values with missing values (NA_real_).
+
+Adding two NA's to response vector:
+
+```{r}
+set.seed(20)
+resp_NA <- resp
+resp_NA[runif(1, 1, 100)] <- NA_real_
+resp_NA[runif(1, 1, 100)] <- NA_real_
+resp_NA
+```
+
+Testing the wrapper function with the NA's:
+
+```{r}
+# test without handling NA's
+get_error(resp_NA, pred)
+get_error(resp_NA, pred, "RMSE", "MAE")
+get_error(resp_NA, pred, "MAE", "RMSE")
+get_error(resp_NA, pred, "RMSE")
+get_error(resp_NA, pred, "MAE")
+
+# test handling NA's
+get_error(resp_NA, pred, na.rm = TRUE)
+get_error(resp_NA, pred, "RMSE", "MAE", na.rm = TRUE)
+get_error(resp_NA, pred, "MAE", "RMSE", na.rm = TRUE)
+get_error(resp_NA, pred, "RMSE", na.rm = TRUE)
+get_error(resp_NA, pred, "MAE", na.rm = TRUE)
+```
+
+-   Test your function by passing it incorrect data:
+
+```{r}
+get_error(penguins$species, penguins$islands)
+get_error(resp, penguins$islands)
+```
+
+## Task 3: Practice with Purrr
+
+Let’s create an interesting list object we can play around with.
+
+```{r}
+
+lm_fit1 <- lm(Sepal.Length ~ Sepal.Width + Species, data = iris)
+```
+
+1.  Pull out the coefficients list element using $, coef(), and the pluck() function from purrr.
+
+```{r}
+library(purrr) #load package
+
+lm_fit1 #look at object
+
+lm_fit1$coefficients
+coef(lm_fit1)
+pluck(lm_fit1, 1)
+pluck(lm_fit1,"coefficients")
+```
+
+2.  Let’s fit a number of different models with the code below!
+
+```{r}
+
+lm_fit2 <- lm(Sepal.Length ~ Sepal.Width, data = iris)
+lm_fit3 <- lm(Sepal.Length ~ Petal.Width + Sepal.Width + Species, data = iris)
+lm_fit4 <- lm(Sepal.Length ~ Petal.Width + Petal.Length + Sepal.Width + Species,
+data = iris)
+fits <- list(lm_fit1, lm_fit2, lm_fit3, lm_fit4)
+```
+
+Now let’s use the purrr::map() function to pull out the coefficients of each model fit from the fits object (using pluck!).
+
+```{r}
+
+map(fits, pluck("coefficients"))
+map(fits, pluck(1))
+```
+
+3.  There is a function called confint() that creates confidence intervals for the coefficients in an lm() fit. We apply that function directly to the fitted object like this:
+
+```{r}
+
+confint(lm_fit1)
+```
+
+Use map() to apply the confint() function to each model fit in the fits object.
+
+```{r}
+map(fits, confint)
+```
+
+4.  Next, let’s create histograms of the residuals in each model fit! Run the code here to set up a 2x2 plotting window.
+
+```{r}
+
+par(mfrow = c(2, 2))
+```
+
+Now, pull out the residual vectors (the resid elements of your fits) using map(). Then use the walk() function with hist to create plots.
+
+```{r}
+
+map(fits, pluck("residuals")) |>
+  walk(hist)
+```
+
+5.  On the list that is created from the map() function used on the resid element, use the purrr::set_names() function to give the names
+“fit1”, “fit2”, “fit3”, and “fit4” to the list elements. With the names set, we now want to use the walk() function. However, it doesn’t add the names appropriately!
+
+```{r}
+
+map(fits, pluck("residuals")) |>
+  set_names(nm = c("fit1", "fit2", "fit3", "fit4")) |>
+  walk(hist)
+```
+
+Instead, we want to use iwalk(). On the result that has names, use iwalk() with an anonymous function that calls hist() and assigns the names appropriately.
+
+```{r}
+
+map(fits, pluck("residuals")) |>
+  set_names(nm = c("fit1", "fit2", "fit3", "fit4")) |>
+  iwalk( \(x, idx) hist(x, main = idx))
+```
